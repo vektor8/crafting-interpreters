@@ -14,16 +14,29 @@ class Parser {
     }
 
     private Expr expression() {
-        // expr -> equality ("," equality)*
-        Expr expr = equality();
+        // expr -> ternary ("," ternary)*
+        Expr expr = ternary();
         while (match(COMMA)){
             Token operator = previous();
-            Expr right = equality();
+            Expr right = ternary();
             expr = new Expr.Binary(expr, operator, right);
         }
         return expr;
     }
 
+    private Expr ternary() {
+        // ternary -> equality ('?' equality ':' equality)*
+        Expr expr = equality();
+        while(match(QUESTION_MARK)){
+            Token operator = previous();
+            Expr trueBranch = equality();
+            if (match(COLON)) {
+                Expr falseBranch = equality();
+                expr = new Expr.Ternary(expr, operator, trueBranch, falseBranch);
+            }
+        }
+        return expr;
+    }
     private Expr equality() {
         Expr expr = comparison();
 
