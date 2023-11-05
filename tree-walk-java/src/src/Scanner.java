@@ -98,7 +98,8 @@ class Scanner {
                 break;
 
             case '\n':
-//                line++;
+                line++;
+                break;
             case '"': string(); break;
             default:
                 if (isDigit(c)) {
