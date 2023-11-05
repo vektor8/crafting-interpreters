@@ -1,12 +1,14 @@
 package src;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 class Environment {
     final Environment enclosing;
     private final Map<String, Object> values = new HashMap<>();
-
+    private final ArrayList<String> declared = new ArrayList<>();
     Environment(Environment enclosing) {
         this.enclosing = enclosing;
     }
@@ -19,6 +21,9 @@ class Environment {
         values.put(name, value);
     }
 
+    void declare(String name){
+        declared.add(name);
+    }
     Object get(Token name) {
         if (values.containsKey(name.lexeme)) {
             return values.get(name.lexeme);
@@ -29,6 +34,11 @@ class Environment {
     }
     void assign(Token name, Object value) {
         if (values.containsKey(name.lexeme)) {
+            values.put(name.lexeme, value);
+            return;
+        }
+        if (declared.contains(name.lexeme)){
+            declared.remove(name.lexeme);
             values.put(name.lexeme, value);
             return;
         }
