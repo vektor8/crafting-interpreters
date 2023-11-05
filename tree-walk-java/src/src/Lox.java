@@ -6,6 +6,8 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.Statement;
+import java.util.Arrays;
 import java.util.List;
 
 public class Lox {
@@ -38,7 +40,7 @@ public class Lox {
             System.out.print("> ");
             String line = reader.readLine();
             if (line == null) break;
-            run(line);
+            runRepl(line);
             hadError = false;
         }
     }
@@ -52,6 +54,16 @@ public class Lox {
         // Stop if there was a syntax error.
         if (hadError) return;
         interpreter.interpret(statements);
+    }
+
+    private static void runRepl(String source){
+        Scanner scanner = new Scanner(source);
+        List<Token> tokens = scanner.scanTokens();
+
+        Parser parser = new Parser(tokens);
+        Expr expr = parser.parseRepl();
+        if (hadError) return;
+        interpreter.interpret(List.of(new Stmt.Print(expr)));
     }
     static void error(int line, String message) {
         report(line, "", message);

@@ -186,6 +186,9 @@ class Parser {
         return statements;
     }
 
+    Expr parseRepl(){
+        return expression();
+    }
     private Stmt declaration() {
         try {
             if (match(VAR)) return varDeclaration();
