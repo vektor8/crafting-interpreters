@@ -167,6 +167,11 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return function.call(this, arguments);
     }
 
+    @Override
+    public Object visitAnonFunctionExpr(Expr.AnonFunction expr) {
+        return new LoxAnonFunction(expr, environment);
+    }
+
     private boolean isEqual(Object a, Object b) {
         if (a == null && b == null) return true;
         if (a == null) return false;
