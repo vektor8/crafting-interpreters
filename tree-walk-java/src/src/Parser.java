@@ -248,6 +248,7 @@ class Parser {
         return new Stmt.If(condition, thenBranch, elseBranch);
     }
     private Stmt statement() {
+        if (match(BREAK)) return breakStatement();
         if (match(FOR)) return forStatement();
         if (match(IF)) return ifStatement();
         if (match(PRINT)) return printStatement();
@@ -256,6 +257,10 @@ class Parser {
         return expressionStatement();
     }
 
+    private Stmt breakStatement(){
+        consume(SEMICOLON, "Expected ';' after 'break'");
+        return new Stmt.Break(null);
+    }
     private Stmt forStatement() {
         consume(LEFT_PAREN, "Expect '(' after 'for'.");
 

@@ -4,12 +4,13 @@ import java.util.List;
 
 abstract class Stmt {
   interface Visitor<R> {
-    R visitBlockStmt(Block stmt);
+    R visitBlockStmt(Block stmt) throws StopIterationException;
     R visitExpressionStmt(Expression stmt);
-    R visitIfStmt(If stmt);
+    R visitIfStmt(If stmt) throws StopIterationException;
     R visitPrintStmt(Print stmt);
     R visitVarStmt(Var stmt);
-    R visitWhileStmt(While stmt);
+    R visitWhileStmt(While stmt) throws StopIterationException;
+    R visitBreakStmt(Break stmt) throws StopIterationException;
   }
   static class Block extends Stmt {
     Block(List<Stmt> statements) {
@@ -17,7 +18,7 @@ abstract class Stmt {
     }
 
     @Override
-    <R> R accept(Visitor<R> visitor) {
+    <R> R accept(Visitor<R> visitor) throws StopIterationException {
       return visitor.visitBlockStmt(this);
     }
 
@@ -43,7 +44,7 @@ abstract class Stmt {
     }
 
     @Override
-    <R> R accept(Visitor<R> visitor) {
+    <R> R accept(Visitor<R> visitor) throws StopIterationException {
       return visitor.visitIfStmt(this);
     }
 
@@ -84,13 +85,25 @@ abstract class Stmt {
     }
 
     @Override
-    <R> R accept(Visitor<R> visitor) {
+    <R> R accept(Visitor<R> visitor) throws StopIterationException {
       return visitor.visitWhileStmt(this);
     }
 
     final Expr condition;
     final Stmt body;
   }
+  static class Break extends Stmt {
+    Break(Expr expression) {
+      this.expression = expression;
+    }
 
-  abstract <R> R accept(Visitor<R> visitor);
+    @Override
+    <R> R accept(Visitor<R> visitor) throws StopIterationException {
+      return visitor.visitBreakStmt(this);
+    }
+
+    final Expr expression;
+  }
+
+  abstract <R> R accept(Visitor<R> visitor) throws StopIterationException;
 }

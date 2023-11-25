@@ -11,10 +11,12 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             }
         } catch (RuntimeError error) {
             Lox.runtimeError(error);
+        } catch (StopIterationException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    private void execute(Stmt stmt) {
+    private void execute(Stmt stmt) throws StopIterationException {
         stmt.accept(this);
     }
     private String stringify(Object object) {
@@ -146,12 +148,12 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
-    public Void visitBlockStmt(Stmt.Block stmt) {
+    public Void visitBlockStmt(Stmt.Block stmt) throws StopIterationException {
         executeBlock(stmt.statements, new Environment(environment));
         return null;
     }
     void executeBlock(List<Stmt> statements,
-                      Environment environment) {
+                      Environment environment) throws StopIterationException {
         Environment previous = this.environment;
         try {
             this.environment = environment;
@@ -159,7 +161,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             for (Stmt statement : statements) {
                 execute(statement);
             }
-        } finally {
+        }finally {
             this.environment = previous;
         }
     }
@@ -188,7 +190,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
-    public Void visitIfStmt(Stmt.If stmt) {
+    public Void visitIfStmt(Stmt.If stmt) throws StopIterationException {
         if (isTruthy(evaluate(stmt.condition))) {
             execute(stmt.thenBranch);
         } else if (stmt.elseBranch != null) {
@@ -211,10 +213,19 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
-    public Void visitWhileStmt(Stmt.While stmt) {
+    public Void visitWhileStmt(Stmt.While stmt){
         while (isTruthy(evaluate(stmt.condition))) {
-            execute(stmt.body);
+            try {
+                execute(stmt.body);
+            }catch (StopIterationException ignored){
+                break;
+            }
         }
         return null;
+    }
+
+    @Override
+    public Void visitBreakStmt(Stmt.Break stmt) throws StopIterationException {
+        throw new StopIterationException();
     }
 }
