@@ -1,10 +1,14 @@
-var a = "global";
-{
-  fun showA() {
-    print a;
+class Person {
+  sayName() {
+    print this.name;
   }
-
-  showA();
-  var a = "block";
-  showA();
 }
+
+var jane = Person();
+jane.name = "Jane";
+
+var bill = Person();
+bill.name = "Bill";
+
+bill.sayName = jane.sayName;
+bill.sayName(); // ?
