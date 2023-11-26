@@ -2,5 +2,10 @@
     var b = 5;
     b = 16;
     print b;
-    var a = b;
+    var a = b + 3;
+    print a;
+    var c = a;
+    print c;
+    print a;
+    print b;
 }

@@ -7,7 +7,8 @@ import java.util.Stack;
 
 class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     private final Interpreter interpreter;
-    private final Stack<Map<String, Boolean>> scopes = new Stack<>();
+    private final Stack<Map<String, Map.Entry<Boolean, Integer>>> scopes = new Stack<>();
+    private int scopeLocalIndex = 0;
     private final Stack<Map<String, Map.Entry<Boolean, Token>>> readScopes = new Stack<>(); // the only way to have pairs without importing from outside standard lib
     Resolver(Interpreter interpreter) {
         this.interpreter = interpreter;
@@ -15,9 +16,12 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     private FunctionType currentFunction = FunctionType.NONE;
     @Override
     public Void visitBlockStmt(Stmt.Block stmt) {
+        int oldLocalIndex = scopeLocalIndex;
+        scopeLocalIndex = 0;
         beginScope();
         resolve(stmt.statements);
         endScope();
+        scopeLocalIndex = oldLocalIndex;
         return null;
     }
 
@@ -36,7 +40,7 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     }
 
     private void beginScope() {
-        scopes.push(new HashMap<String, Boolean>());
+        scopes.push(new HashMap<>());
         readScopes.push(new HashMap<>());
     }
 
@@ -62,25 +66,33 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     private void declare(Token name) {
         if (scopes.isEmpty()) return;
 
-        Map<String, Boolean> scope = scopes.peek();
+        var scope = scopes.peek();
         if (scope.containsKey(name.lexeme)) {
             Lox.error(name,
                     "Already a variable with this name in this scope.");
         }
-        scope.put(name.lexeme, false);
+        scope.put(name.lexeme, Map.entry(false, scopeLocalIndex));
+        scopeLocalIndex++;
         readScopes.peek().put(name.lexeme, Map.entry(false, name));
     }
 
     private void define(Token name) {
         if (scopes.isEmpty()) return;
-        scopes.peek().put(name.lexeme, true);
+        var scope = scopes.peek();
+        if (scope.containsKey(name.lexeme)) {
+            int index = scope.get(name.lexeme).getValue();
+            scope.put(name.lexeme, Map.entry(true, index));
+        }else{
+            scope.put(name.lexeme, Map.entry(true, scopeLocalIndex));
+            scopeLocalIndex++;
+        }
         readScopes.peek().put(name.lexeme, Map.entry(false, name));
     }
 
     @Override
     public Void visitVariableExpr(Expr.Variable expr) {
         if (!scopes.isEmpty() &&
-                scopes.peek().get(expr.name.lexeme) == Boolean.FALSE) {
+                scopes.peek().get(expr.name.lexeme).getKey() == Boolean.FALSE) {
             Lox.error(expr.name,
                     "Can't read local variable in its own initializer.");
         }
@@ -93,7 +105,7 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     private void resolveLocal(Expr expr, Token name) {
         for (int i = scopes.size() - 1; i >= 0; i--) {
             if (scopes.get(i).containsKey(name.lexeme)) {
-                interpreter.resolve(expr, scopes.size() - 1 - i);
+                interpreter.resolve(expr, scopes.size() - 1 - i, scopes.get(i).get(name.lexeme).getValue());
                 return;
             }
         }
@@ -118,6 +130,8 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
             Stmt.Function function, FunctionType type) {
         FunctionType enclosingFunction = currentFunction;
         currentFunction = type;
+        int oldLocalIndex = scopeLocalIndex;
+        scopeLocalIndex = 0;
         beginScope();
         for (Token param : function.params) {
             declare(param);
@@ -125,6 +139,7 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         }
         resolve(function.body);
         endScope();
+        scopeLocalIndex = oldLocalIndex;
         currentFunction = enclosingFunction;
     }
 

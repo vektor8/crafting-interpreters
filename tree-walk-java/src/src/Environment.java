@@ -1,12 +1,14 @@
 package src;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 class Environment {
     final Environment enclosing;
     private final Map<String, Object> values = new HashMap<>();
-
+    private final List<Object> vals = new ArrayList<>();
     Environment(Environment enclosing) {
         this.enclosing = enclosing;
     }
@@ -17,6 +19,7 @@ class Environment {
 
     void define(String name, Object value) {
         values.put(name, value);
+        vals.add(value);
     }
 
     Object get(Token name) {
@@ -40,8 +43,8 @@ class Environment {
                 "Undefined variable '" + name.lexeme + "'.");
     }
 
-    Object getAt(int distance, String name) {
-        return ancestor(distance).values.get(name);
+    Object getAt(int distance, int index) {
+        return ancestor(distance).vals.get(index);
     }
 
     Environment ancestor(int distance) {
@@ -53,7 +56,14 @@ class Environment {
         return environment;
     }
 
-    void assignAt(int distance, Token name, Object value) {
-        ancestor(distance).values.put(name.lexeme, value);
+    void assignAt(int distance, int index, Object value) {
+//        ancestor(distance).values.put(name.lexeme, value);
+        var env = ancestor(distance);
+        if (index >= env.vals.size()){
+            assert(index == env.vals.size());
+            env.vals.add(value);
+            return;
+        }
+        env.vals.set(index, value);
     }
 }
