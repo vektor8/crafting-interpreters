@@ -8,6 +8,7 @@ import java.util.Stack;
 class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     private final Interpreter interpreter;
     private final Stack<Map<String, Boolean>> scopes = new Stack<>();
+    private final Stack<Map<String, Map.Entry<Boolean, Token>>> readScopes = new Stack<>(); // the only way to have pairs without importing from outside standard lib
     Resolver(Interpreter interpreter) {
         this.interpreter = interpreter;
     }
@@ -36,10 +37,16 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
     private void beginScope() {
         scopes.push(new HashMap<String, Boolean>());
+        readScopes.push(new HashMap<>());
     }
 
     private void endScope() {
         scopes.pop();
+        readScopes.pop().forEach((varName, used) -> {
+            if (!used.getKey()){
+                Lox.error(used.getValue(), "Variable " + varName +" is never used" );
+            }
+        });
     }
 
     @Override
@@ -61,11 +68,13 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
                     "Already a variable with this name in this scope.");
         }
         scope.put(name.lexeme, false);
+        readScopes.peek().put(name.lexeme, Map.entry(false, name));
     }
 
     private void define(Token name) {
         if (scopes.isEmpty()) return;
         scopes.peek().put(name.lexeme, true);
+        readScopes.peek().put(name.lexeme, Map.entry(false, name));
     }
 
     @Override
@@ -75,7 +84,9 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
             Lox.error(expr.name,
                     "Can't read local variable in its own initializer.");
         }
-
+        if (!readScopes.isEmpty()){
+            readScopes.peek().put(expr.name.lexeme, Map.entry(true, expr.name));
+        }
         resolveLocal(expr, expr.name);
         return null;
     }
