@@ -252,7 +252,7 @@ class Parser {
     private Stmt declaration() {
         try {
             if (match(CLASS)) return classDeclaration();
-            if(match(FUN))  return function("function");
+            if (match(FUN))  return function("function");
             if (match(VAR)) return varDeclaration();
 
             return statement();
@@ -267,13 +267,19 @@ class Parser {
         consume(LEFT_BRACE, "Expect '{' before class body.");
 
         List<Stmt.Function> methods = new ArrayList<>();
+        List<Stmt.Function> staticMethods = new ArrayList<>();
+
         while (!check(RIGHT_BRACE) && !isAtEnd()) {
-            methods.add(function("method"));
+            if (match(CLASS)){
+                staticMethods.add(function("static method"));
+            }else {
+                methods.add(function("method"));
+            }
         }
 
         consume(RIGHT_BRACE, "Expect '}' after class body.");
 
-        return new Stmt.Class(name, methods);
+        return new Stmt.Class(name, methods, staticMethods);
     }
 
     private Stmt.Function function(String kind) {

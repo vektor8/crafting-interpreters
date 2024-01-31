@@ -2,6 +2,10 @@ class Person {
   sayName() {
     print this.name;
   }
+
+  class string() {
+    print "Person";
+  }
 }
 
 var jane = Person();
@@ -12,3 +16,12 @@ bill.name = "Bill";
 
 bill.sayName = jane.sayName;
 bill.sayName(); // ?
+Person.string();
+
+class Math {
+  class square(n) {
+    return n * n;
+  }
+}
+
+print Math.square(3); // Prints "9".

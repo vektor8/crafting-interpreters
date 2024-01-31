@@ -212,6 +212,11 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
             FunctionType declaration = FunctionType.METHOD;
             resolveFunction(method, declaration);
         }
+
+        for (Stmt.Function method : stmt.staticMethods) {
+            FunctionType declaration = FunctionType.STATIC_METHOD;
+            resolveFunction(method, declaration);
+        }
         endScope();
         currentClass = enclosingClass;
         return null;
@@ -243,6 +248,7 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         NONE,
         FUNCTION,
         METHOD,
+        STATIC_METHOD,
         INITIALIZER
     }
 

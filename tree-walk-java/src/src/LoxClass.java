@@ -3,13 +3,16 @@ package src;
 import java.util.List;
 import java.util.Map;
 
-class LoxClass implements LoxCallable {
+class LoxClass extends LoxInstance implements LoxCallable {
     final String name;
     private final Map<String, LoxFunction> methods;
+    private final Map<String, LoxFunction> staticMethods;
 
-    LoxClass(String name, Map<String, LoxFunction> methods) {
+    LoxClass(String name, Map<String, LoxFunction> methods, Map<String, LoxFunction> staticMethods) {
         this.name = name;
         this.methods = methods;
+        this.staticMethods = staticMethods;
+        this.klass = this;
     }
 
     @Override
@@ -38,7 +41,9 @@ class LoxClass implements LoxCallable {
         if (methods.containsKey(name)) {
             return methods.get(name);
         }
-
+        if (staticMethods.containsKey(name)){
+            return staticMethods.get(name);
+        }
         return null;
     }
 }
